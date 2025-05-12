@@ -1,17 +1,5 @@
 # Avaliação de Desempenho em SGBDs
 ## Comparativo: MongoDB vs Cassandra
-### Disciplina: Banco de Dados Avançado
-
----
-
-## Equipe
-- Aluno 1
-- Aluno 2
-- Aluno 3
-- Aluno 4
-- Aluno 5
-
----
 
 ## Objetivos
 
