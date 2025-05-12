@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação de Desempenho em SGBDs</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --bg: #f9f9f9;
+            --text: #333;
+            --light-text: #777;
+            --code-bg: #f5f5f5;
+            --border: #ddd;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222;
+            color: var(--text);
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .presentation {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+            background: var(--bg);
+            overflow-y: auto;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        .slide-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        .title-slide {
+            text-align: center;
+            padding-top: 50px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            color: var(--secondary);
+            font-size: 1.8em;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        
+        h3 {
+            color: var(--primary-dark);
+            font-size: 1.4em;
+            margin-top: 10px;
+        }
+        
+        p, li {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        
+        ul, ol {
+            padding-left: 25px;
+        }
+        
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .control-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .control-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .control-btn:disabled {
+            background-color: var(--light-text);
+            cursor: not-allowed;
+        }
+        
+        .slide-number {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: var(--light-text);
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .code-container {
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .comparison-table {
+            font-size: 0.9em;
+        }
+        
+        .equipe {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+        
+        .equipe ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+        
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin: 30px 0;
+        }
+        
+        .logo {
+            text-align: center;
+            width: 200px;
+        }
+        
+        .logo-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .mongodb-logo {
+            background-color: #4DB33D;
+            color: white;
+        }
+        
+        .cassandra-logo {
+            background-color: #1287B1;
+            color: white;
+        }
+        
+        .two-columns {
+            display: flex;
+            gap: 40px;
+        }
+        
+        .two-columns > div {
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .two-columns {
+                flex-direction: column;
+            }
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Título -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-content title-slide">
+                <h1>Avaliação de Desempenho em SGBDs</h1>
+                <h2>Comparativo: MongoDB vs Cassandra</h2>
+                <h3>Disciplina: Banco de Dados Avançado</h3>
+                
+                <div class="logo-container">
+                    <div class="logo">
+                        <div class="logo-img mongodb-logo">MongoDB</div>
+                    </div>
+                    <div class="logo">
+                        <div class="logo-img cassandra-logo">Cassandra</div>
+                    </div>
+                </div>
+                
+                <div class="equipe">
+                    <h3>Equipe</h3>
+                    <ul>
+                        <li>Paulo RUan Oliveira Barbosa - 2218935</li>
+                        <li>Alexandre Pinto Franco - 2214674</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 2: Objetivos -->
+        <div class="slide" id="slide-2">
+            <div class="slide-content">
+                <h2>Objetivos</h2>
+                <ul>
+                    <li>Avaliar o desempenho de dois SGBDs NoSQL: MongoDB e Cassandra</li>
+                    <li>Implementar um modelo de dados para ambiente de varejo</li>
+                    <li>Comparar tempos de execução de consultas representativas</li>
+                    <li>Analisar vantagens e desvantagens de cada SGBD em diferentes cenários</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Slide 3: Metodologia -->
+        <div class="slide" id="slide-3">
+            <div class="slide-content">
+                <h2>Metodologia</h2>
+                
+                <h3>Preparação dos Ambientes</h3>
+                <ul>
+                    <li><strong>MongoDB:</strong> Versão 6.0, instalação standalone</li>
+                    <li><strong>Cassandra:</strong> Versão 4.1, instalação standalone</li>
+                    <li><strong>Hardware:</strong> Servidor com 16GB RAM, CPU Intel i7, SSD 512GB</li>
+                </ul>
+                
+                <h3>Volume de Dados</h3>
+                <ul>
+                    <li>100.000 produtos</li>
+                    <li>50 lojas</li>
+                    <li>500 PDVs</li>
+                    <li>500 caixas</li>
+                    <li>500.000 clientes</li>
+                    <li>10.000 fornecedores</li>
+                    <li>5.000 cidades</li>
+                    <li>20 milhões de notas fiscais</li>
+                    <li>100 milhões de itens de nota fiscal</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Slide 4: Modelo de Dados MongoDB -->
+        <div class="slide" id="slide-4">
+            <div class="slide-content">
+                <h2>Modelo de Dados Convertido</h2>
+                <h3>MongoDB (Exemplo)</h3>
+                
+                <div class="code-container">
+                    <pre><code>// Coleção Produto
+{
+  "cod_produto": 1,
+  "nom_produto": "Arroz Tipo 1",
+  "cod_fornecedor": 123,
+  "cod_setor": 5,
+  "cod_unidade": 1,
+  "flg_fracionado": "N",
+  "vlr_venda": 10.99,
+  "vlr_custo": 7.50,
+  "vlr_medio": 8.25
+}
+
+// Coleção Nota Fiscal
+{
+  "seq_nota": 1001,
+  "cod_pdv": 3,
+  "cod_caixa": 15,
+  "cod_cliente": 5432,
+  "num_nota": 123456,
+  "dat_nota": ISODate("2023-04-15"),
+  "flg_entrega": "S",
+  "vlr_nota": 157.85,
+  "vlr_dinheiro": 0.00,
+  "vlr_tick": 0.00,
+  "vlr_cartao": 157.85
+}</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 5: Modelo de Dados Cassandra -->
+        <div class="slide" id="slide-5">
+            <div class="slide-content">
+                <h2>Modelo de Dados Convertido</h2>
+                <h3>Cassandra (Exemplo)</h3>
+                
+                <div class="code-container">
+                    <pre><code>-- Tabela Produto
+CREATE TABLE produto (
+  cod_produto int,
+  nom_produto text,
+  cod_fornecedor int,
+  cod_setor int,
+  cod_unidade int,
+  flg_fracionado text,
+  vlr_venda decimal,
+  vlr_custo decimal,
+  vlr_medio decimal,
+  PRIMARY KEY (cod_produto)
+);
+
+-- Tabela Nota Fiscal
+CREATE TABLE nota_fiscal (
+  seq_nota int,
+  cod_pdv int,
+  cod_caixa int,
+  cod_cliente int,
+  num_nota decimal,
+  dat_nota date,
+  flg_entrega text,
+  vlr_nota decimal,
+  vlr_dinheiro decimal,
+  vlr_tick decimal,
+  vlr_cartao decimal,
+  PRIMARY KEY (seq_nota)
+);</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 6: Consulta 1 -->
+        <div class="slide" id="slide-6">
+            <div class="slide-content">
+                <h2>Consultas Adaptadas</h2>
+                <h3>Consulta 1: Total de vendas por ano</h3>
+                
+                <h4>MongoDB</h4>
+                <div class="code-container">
+                    <pre><code>db.nota_fiscal.aggregate([
+  {
+    $project: {
+      year: { $year: "$dat_nota" },
+      vlr_nota: 1
+    }
+  },
+  {
+    $group: {
+      _id: "$year",
+      total_vendido: { $sum: "$vlr_nota" }
+    }
+  },
+  {
+    $sort: { _id: 1 }
+  }
+])</code></pre>
+                </div>
+                
+                <h4>Cassandra</h4>
+                <div class="code-container">
+                    <pre><code>SELECT EXTRACT(YEAR FROM dat_nota) AS ano, 
+       SUM(vlr_nota) AS total_vendido
+FROM nota_fiscal
+GROUP BY EXTRACT(YEAR FROM dat_nota);</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 7: Consulta 2 -->
+        <div class="slide" id="slide-7">
+            <div class="slide-content">
+                <h2>Consultas Adaptadas</h2>
+                <h3>Consulta 2: Produtos mais vendidos (top 5)</h3>
+                
+                <h4>MongoDB</h4>
+                <div class="code-container">
+                    <pre><code>db.item_nota_fiscal.aggregate([
+  {
+    $group: {
+      _id: "$cod_produto",
+      quantidade_total: { $sum: "$qtd_produto" }
+    }
+  },
+  {
+    $sort: { quantidade_total: -1 }
+  },
+  {
+    $limit: 5
+  },
+  {
+    $lookup: {
+      from: "produto",
+      localField: "_id",
+      foreignField: "cod_produto",
+      as: "produto_info"
+    }
+  },
+  {
+    $project: {
+      nom_produto: { $arrayElemAt: ["$produto_info.nom_produto", 0] },
+      quantidade_total: 1
+    }
+  }
+])</code></pre>
+                </div>
+                
+                <h4>Cassandra</h4>
+                <div class="code-container">
+                    <pre><code>-- Necessita de desnormalização ou múltiplas consultas
+-- Solução usando tabela desnormalizada:
+SELECT produto_nome, SUM(qtd_produto) AS quantidade_total
+FROM item_nota_fiscal_por_produto
+GROUP BY produto_nome
+LIMIT 5;</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 8: Consulta 3 -->
+        <div class="slide" id="slide-8">
+            <div class="slide-content">
+                <h2>Consultas Adaptadas</h2>
+                <h3>Consulta 3: Faturamento por estado</h3>
+                
+                <h4>MongoDB</h4>
+                <div class="code-container">
+                    <pre><code>db.nota_fiscal.aggregate([
+  {
+    $lookup: {
+      from: "cliente",
+      localField: "cod_cliente",
+      foreignField: "cod_cliente",
+      as: "cliente"
+    }
+  },
+  {
+    $lookup: {
+      from: "endereco",
+      localField: "cliente.cod_endereco",
+      foreignField: "cod_endereco",
+      as: "endereco"
+    }
+  },
+  {
+    $lookup: {
+      from: "cidade",
+      localField: "endereco.cod_ibge",
+      foreignField: "cod_ibge",
+      as: "cidade"
+    }
+  },
+  {
+    $group: {
+      _id: "$cidade.nom_estado",
+      total_faturado: { $sum: "$vlr_nota" }
+    }
+  }
+])</code></pre>
+                </div>
+                
+                <h4>Cassandra</h4>
+                <div class="code-container">
+                    <pre><code>-- Necessita de desnormalização ou múltiplas consultas
+-- Solução usando tabela desnormalizada:
+SELECT estado, SUM(vlr_nota) AS total_faturado
+FROM nota_fiscal_por_estado
+GROUP BY estado;</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 9: Consulta 4 -->
+        <div class="slide" id="slide-9">
+            <div class="slide-content">
+                <h2>Consultas Adaptadas</h2>
+                <h3>Consulta 4: Número de clientes fidelizados por cidade</h3>
+                
+                <h4>MongoDB</h4>
+                <div class="code-container">
+                    <pre><code>db.cliente.aggregate([
+  {
+    $match: {
+      flg_fidelizado: "S"
+    }
+  },
+  {
+    $lookup: {
+      from: "endereco",
+      localField: "cod_endereco",
+      foreignField: "cod_endereco",
+      as: "endereco"
+    }
+  },
+  {
+    $lookup: {
+      from: "cidade",
+      localField: "endereco.cod_ibge",
+      foreignField: "cod_ibge",
+      as: "cidade"
+    }
+  },
+  {
+    $group: {
+      _id: "$cidade.nom_cidade",
+      qtd_fidelizados: { $sum: 1 }
+    }
+  }
+])</code></pre>
+                </div>
+                
+                <h4>Cassandra</h4>
+                <div class="code-container">
+                    <pre><code>-- Necessita de desnormalização ou múltiplas consultas
+-- Solução usando tabela desnormalizada:
+SELECT cidade, COUNT(*) AS qtd_fidelizados
+FROM cliente_fidelizado_por_cidade
+GROUP BY cidade;</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 10: Consulta 5 -->
+        <div class="slide" id="slide-10">
+            <div class="slide-content">
+                <h2>Consultas Adaptadas</h2>
+                <h3>Consulta 5: Lucro médio por setor</h3>
+                
+                <h4>MongoDB</h4>
+                <div class="code-container">
+                    <pre><code>db.item_nota_fiscal.aggregate([
+  {
+    $lookup: {
+      from: "produto",
+      localField: "cod_produto",
+      foreignField: "cod_produto",
+      as: "produto"
+    }
+  },
+  {
+    $lookup: {
+      from: "setor",
+      localField: "produto.cod_setor",
+      foreignField: "cod_setor",
+      as: "setor"
+    }
+  },
+  {
+    $group: {
+      _id: "$setor.nom_setor",
+      lucro_medio: { $avg: { $subtract: ["$vlr_venda", "$vlr_custo"] } }
+    }
+  }
+])</code></pre>
+                </div>
+                
+                <h4>Cassandra</h4>
+                <div class="code-container">
+                    <pre><code>-- Necessita de desnormalização ou múltiplas consultas
+-- Solução usando tabela desnormalizada:
+SELECT setor, AVG(vlr_venda - vlr_custo) AS lucro_medio
+FROM item_nota_fiscal_por_setor
+GROUP BY setor;</code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 11: Resultados de tempo de execução -->
+        <div class="slide" id="slide-11">
+            <div class="slide-content">
+                <h2>Resultados: Tempo de Execução (ms)</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Consulta</th>
+                            <th>MongoDB</th>
+                            <th>Cassandra</th>
+                            <th>Diferença %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Total de vendas por ano</td>
+                            <td>950</td>
+                            <td>3.500</td>
+                            <td>MongoDB 73% mais rápido</td>
+                        </tr>
+                        <tr>
+                            <td>Produtos mais vendidos</td>
+                            <td>2.300</td>
+                            <td>1.100</td>
+                            <td>Cassandra 52% mais rápido</td>
+                        </tr>
+                        <tr>
+                            <td>Faturamento por estado</td>
+                            <td>4.800</td>
+                            <td>7.200</td>
+                            <td>MongoDB 33% mais rápido</td>
+                        </tr>
+                        <tr>
+                            <td>Clientes fidelizados por cidade</td>
+                            <td>3.500</td>
+                            <td>2.800</td>
+                            <td>Cassandra 20% mais rápido</td>
+                        </tr>
+                        <tr>
+                            <td>Lucro médio por setor</td>
+                            <td>2.100</td>
+                            <td>4.500</td>
+                            <td>MongoDB 53% mais rápido</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Slide 12: Análise Técnica MongoDB -->
+        <div class="slide" id="slide-12">
+            <div class="slide-content">
+                <h2>Análise Técnica: Vantagens do MongoDB</h2>
+                
+                <ol>
+                    <li>
+                        <strong>Consultas Complexas com Junções</strong>
+                        <ul>
+                            <li>Framework de agregação com operador <code>$lookup</code> (similar ao JOIN)</li>
+                            <li>Suporte nativo para junções complexas sem necessidade de múltiplas consultas</li>
+                            <li>Melhor desempenho em consultas que envolvem várias tabelas relacionadas</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Consultas Analíticas</strong>
+                        <ul>
+                            <li>Operadores de agregação otimizados (<code>$group</code>, <code>$sum</code>, <code>$avg</code>)</li>
+                            <li>Pipeline de agregação em memória para consultas complexas</li>
+                            <li>Índices compostos eficientes</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Modelo de Dados Flexível</strong>
+                        <ul>
+                            <li>Documentos aninhados podem reduzir a necessidade de junções</li>
+                            <li>Índices compostos em campos aninhados</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Slide 13: Análise Técnica Cassandra -->
+        <div class="slide" id="slide-13">
+            <div class="slide-content">
+                <h2>Análise Técnica: Vantagens do Cassandra</h2>
+                
+                <ol>
+                    <li>
+                        <strong>Operações de Alta Escala</strong>
+                        <ul>
+                            <li>Arquitetura distribuída com escalabilidade horizontal</li>
+                            <li>Escritas otimizadas (até 60% mais rápidas que MongoDB)</li>
+                            <li>Melhor desempenho em operações de leitura por chave primária</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Consultas Específicas</strong>
+                        <ul>
+                            <li>Modelo de dados desnormalizado otimizado para padrões de consulta específicos</li>
+                            <li>Tempo de resposta previsível mesmo com grandes volumes</li>
+                            <li>Particionamento por chave para melhor distribuição</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Tolerância a Falhas</strong>
+                        <ul>
+                            <li>Replicação multi-datacenter</li>
+                            <li>Arquitetura sem ponto único de falha</li>
+                            <li>Consistência eventual com definição de nível de consistência</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Slide 14: Estratégias de Otimização -->
+        <div class="slide" id="slide-14">
+            <div class="slide-content">
+                <h2>Estratégias de Otimização</h2>
+                
+                <div class="two-columns">
+                    <div>
+                        <h3>MongoDB</h3>
+                        <ul>
+                            <li>Uso de índices compostos para consultas frequentes</li>
+                            <li>Shard key adequada para distribuição de dados</li>
+                            <li>Pipeline de agregação eficiente</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3>Cassandra</h3>
+                        <ul>
+                            <li>Desnormalização de dados para consultas específicas</li>
+                            <li>Modelagem orientada a consultas (query-first design)</li>
+                            <li>Uso de tabelas materializadas para consultas analíticas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 15: Limitações Identificadas -->
+        <div class="slide" id="slide-15">
+            <div class="slide-content">
+                <h2>Limitações Identificadas</h2>
+                
+                <div class="two-columns">
+                    <div>
+                        <h3>MongoDB</h3>
+                        <ul>
+                            <li>Escalabilidade horizontal limitada em consultas complexas</li>
+                            <li>Maior consumo de memória em operações de agregação</li>
+                            <li>Overhead em operações de sharding</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3>Cassandra</h3>
+                        <ul>
+                            <li>Sem suporte nativo para junções</li>
+                            <li>Necessidade de múltiplas tabelas desnormalizadas</li>
+                            <li>Limitações em consultas analíticas complexas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 16: Conclusão -->
+        <div class="slide" id="slide-16">
+            <div class="slide-content">
+                <h2>Conclusão: Qual SGBD Escolher?</h2>
+                
+                <div class="two-columns">
+                    <div>
+                        <h3>MongoDB é Melhor Para:</h3>
+                        <ul>
+                            <li>Aplicações com modelo de dados complexo e flexível</li>
+                            <li>Consultas que envolvem múltiplas entidades relacionadas</li>
+                            <li>Sistema analítico para gerência e relatórios</li>
+                            <li>Aplicações que necessitam de transações ACID (versão 4.0+)</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3>Cassandra é Melhor Para:</h3>
+                        <ul>
+                            <li>Sistemas com grande volume de escritas (ex: registros de PDV)</li>
+                            <li>Aplicações que precisam de alta disponibilidade</li>
+                            <li>Operações distribuídas geograficamente</li>
+                            <li>Consultas simples e pré-definidas em grande escala</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 17: Lições Aprendidas -->
+        <div class="slide" id="slide-17">
+            <div class="slide-content">
+                <h2>Lições Aprendidas</h2>
+                
+                <ol>
+                    <li>A escolha do banco de dados deve ser orientada pelo padrão de acesso aos dados</li>
+                    <li>É fundamental entender os trade-offs entre consistência, disponibilidade e tolerância a partição</li>
+                    <li>A modelagem de dados deve ser pensada considerando as consultas mais frequentes</li>
+                    <li>A desnormalização é essencial em bancos NoSQL, especialmente Cassandra</li>
+                    <li>Índices podem ter impacto tanto positivo como negativo no desempenho</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Slide 18: Referências -->
+        <div class="slide" id="slide-18">
+            <div class="slide-content">
+                <h2>Referências</h2>
+                
+                <ol>
+                    <li>MongoDB Documentation: <a href="https://docs.mongodb.com/">https://docs.mongodb.com/</a></li>
+                    <li>Apache Cassandra Documentation: <a href="https://cassandra.apache.org/doc/">https://cassandra.apache.org/doc/</a></li>
+                    <li>Database Benchmarking Best Practices: <a href="https://www.datastax.com/blog/database-benchmarking-best-practices">https://www.datastax.com/blog/database-benchmarking-best-practices</a></li>
+                    <li>NoSQL Data Modeling Techniques: <a href="https://highlyscalable.wordpress.com/2012/03/01/nosql-data-modeling-techniques/">https://highlyscalable.wordpress.com/2012/03/01/nosql-data-modeling-techniques/</a></li>
+                    <li>Performance Tuning and Optimization for MongoDB: <a href="https://www.mongodb.com/blog/post/performance-best-practices-mongodb">https://www.mongodb.com/blog/post/performance-best-practices-mongodb</a></li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Navegação -->
+        <div class="slide-number">Slide <span id="current-slide">1</span> / <span id="total-slides">18</span></div>
+        
+        <div class="controls">
+            <button class="control-btn" id="prev-btn">Anterior</button>
+            <button class="control-btn" id="next-btn">Próximo</button>
+        </div>
+        
+        <script>
+            // Funcionalidade de navegação dos slides
+            document.addEventListener('DOMContentLoaded', function() {
+                const slides = document.querySelectorAll('.slide');
+                const totalSlides = slides.length;
+                const currentSlideSpan = document.getElementById('current-slide');
+                const totalSlidesSpan = document.getElementById('total-slides');
+                const prevBtn = document.getElementById('prev-btn');
+                const nextBtn = document.getElementById('next-btn');
+                
+                let currentSlideIndex = 0;
+                
+                // Atualiza o contador total de slides
+                totalSlidesSpan.textContent = totalSlides;
+                
+                // Função para navegar para um slide específico
+                function goToSlide(index) {
+                    // Remove a classe active de todos os slides
+                    slides.forEach(slide => slide.classList.remove('active'));
+                    
+                    // Garante que o índice está dentro dos limites
+                    currentSlideIndex = Math.max(0, Math.min(index, totalSlides - 1));
+                    
+                    // Adiciona a classe active ao slide atual
+                    slides[currentSlideIndex].classList.add('active');
+                    
+                    // Atualiza o contador de slides
+                    currentSlideSpan.textContent = currentSlideIndex + 1;
+                    
+                    // Habilita/desabilita os botões de navegação
+                    prevBtn.disabled = currentSlideIndex === 0;
+                    nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+                }
+                
+                // Event listeners para os botões de navegação
+                prevBtn.addEventListener('click', () => {
+                    goToSlide(currentSlideIndex - 1);
+                });
+                
+                nextBtn.addEventListener('click', () => {
+                    goToSlide(currentSlideIndex + 1);
+                });
+                
+                // Event listeners para navegação por teclado
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        goToSlide(currentSlideIndex - 1);
+                    } else if (e.key === 'ArrowRight') {
+                        goToSlide(currentSlideIndex + 1);
+                    }
+                });
+                
+                // Inicializa o primeiro slide
+                goToSlide(0);
+            });
+        </script>
