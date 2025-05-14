@@ -18,15 +18,15 @@
 - **Hardware**: Servidor com 16GB RAM, CPU Intel i7, SSD 512GB
 
 ### Volume de Dados
-- 100.000 produtos
+- 5.000 produtos
 - 50 lojas
 - 500 PDVs
 - 500 caixas
-- 500.000 clientes
+- 25.000 clientes
 - 10.000 fornecedores
-- 5.000 cidades
-- 20 milhões de notas fiscais
-- 100 milhões de itens de nota fiscal
+- 2.000 cidades
+- 100 mil notas fiscais
+- 100 mil itens de nota fiscal
 
 ---
 
